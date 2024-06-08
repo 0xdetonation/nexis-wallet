@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode, Suspense, useMemo } from "react";
+import { type ReactElement, type ReactNode, Suspense, useMemo, useEffect, useState } from "react";
 import type { Blockchain } from "@coral-xyz/common";
 import { hiddenTokenAddresses } from "@coral-xyz/recoil";
 import { YStack } from "@coral-xyz/tamagui";
@@ -116,18 +116,82 @@ function _TokenBalances({
     hiddenTokenAddresses(providerId.toLowerCase() as Blockchain)
   );
 
-  const { data } = usePolledSuspenseQuery(
-    pollingIntervalSeconds ?? DEFAULT_POLLING_INTERVAL_SECONDS,
-    GET_TOKEN_BALANCES_QUERY,
-    {
-      fetchPolicy,
-      errorPolicy: "all",
-      variables: {
-        address,
-        providerId,
-      },
+  const ZERO_ADDRESS="0x0000000000000000000000000000000000000000";
+  const [data,setData] = useState([]);
+  const [nztBal,setNztBal] = useState({
+    id: ZERO_ADDRESS,
+        address: ZERO_ADDRESS,
+        displayAmount: (0 / Math.pow(10, 18)).toString(),
+        token: "Nexis",
+        marketData: {
+          id: "",
+          percentChange: 0,
+          value: 1,
+          valueChange: 0,
+        }
+  });
+
+  useEffect(()=>{
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-balances`;
+
+    const fetchBalances = async()=>{
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        let data = await response.json();
+
+        setData(data);
+      } catch (error) {
+        console.error('Error fetching token balances:', error);
+      }
     }
-  );
+    fetchBalances();
+  },[])
+
+  useEffect(()=>{
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5`;
+
+    const fetchNZTBalance = async()=>{
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        let data = await response.json();
+
+        setNztBal({
+          id: ZERO_ADDRESS,
+              address: ZERO_ADDRESS,
+              displayAmount: (data.coin_balance / Math.pow(10, 18)).toString(),
+              token: "Nexis",
+              marketData: {
+                id: ZERO_ADDRESS,
+                percentChange: 0,
+                value: 1,
+                valueChange: 0,
+              }
+        })
+      } catch (error) {
+        console.error('Error fetching token balances:', error);
+      }
+    }
+    fetchNZTBalance();
+  },[])
+  
+  // const { data } = usePolledSuspenseQuery(
+  //   pollingIntervalSeconds ?? DEFAULT_POLLING_INTERVAL_SECONDS,
+  //   GET_TOKEN_BALANCES_QUERY,
+  //   {
+  //     fetchPolicy,
+  //     errorPolicy: "all",
+  //     variables: {
+  //       address,
+  //       providerId,
+  //     },
+  //   }
+  // );
 
   /**
    * Memoized value of the individual wallet token balances that
@@ -139,12 +203,24 @@ function _TokenBalances({
     balances: ResponseTokenBalance[];
     omissions: { value: number; valueChange: number };
   }>(() => {
-    let balances =
-      data?.wallet?.balances?.tokens?.edges.map((e) => e.node) ?? [];
+    let balances = data
+      .filter((item: any) => item.token.type === "ERC-20")
+      .map((item:any) => ({
+        id: item.token.address,
+        address: item.token.address,
+        displayAmount: (item.value / Math.pow(10, item.token.decimals)).toString(),
+        token: item.token.name + "( "+item.token.symbol +" )",
+        marketData: {
+          id: "",
+          percentChange: 0,
+          value: 0,
+          valueChange: 0,
+        }
+      }));
 
     const omissions = { value: 0, valueChange: 0 };
     if (hidden && hidden.length > 0) {
-      balances = balances.filter((b) => {
+      balances = balances.filter((b:any) => {
         if (hidden.includes(b.token)) {
           omissions.value += b.marketData?.value ?? 0;
           omissions.valueChange += b.marketData?.valueChange ?? 0;
@@ -161,17 +237,22 @@ function _TokenBalances({
    * Memoized value of the inner balance summary aggregate
    * returned from the GraphQL query for the page.
    */
-  const aggregate: ResponseBalanceSummary = useMemo(() => {
-    const aggregate = data?.wallet?.balances?.aggregate
-      ? { ...data.wallet.balances.aggregate }
-      : {
-          id: "",
-          percentChange: 0,
-          value: 0,
-          valueChange: 0,
-        };
+  const aggregate = useMemo(() => {
+    const aggregate = {
+      id: "",
+      percentChange: 0,
+      value: 0,
+      valueChange: 0,
+    };
+
+    balances.forEach((balance:any) => {
+      aggregate.value += balance.marketData.value;
+      aggregate.valueChange += balance.marketData.valueChange;
+    });
+
     aggregate.value -= omissions.value;
     aggregate.valueChange -= omissions.valueChange;
+
     return aggregate;
   }, [data, omissions]);
 
@@ -180,7 +261,7 @@ function _TokenBalances({
       <BalanceSummary style={summaryStyle} {...aggregate} />
       {widgets}
       <BalancesTable
-        balances={balances}
+        balances={[nztBal,...balances]}
         footerComponent={tableFooterComponent}
         onItemClick={onItemClick}
       />
