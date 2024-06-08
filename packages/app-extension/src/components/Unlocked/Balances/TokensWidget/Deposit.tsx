@@ -383,9 +383,9 @@ function _Deposit({
           textAlign="center"
         >
           {t("address_receive_warning", {
-            gasTokenName: blockchainConfig!.GasTokenName,
+            gasTokenName: blockchainConfig!.GasTokenName=="ETH"?"NZT":blockchainConfig!.GasTokenName,
             appTokenName: blockchainConfig!.AppTokenName,
-            name: blockchainConfig!.Name,
+            name: blockchainConfig!.Name=="Ethereum"?"Nexis EVM":blockchainConfig!.Name,
           })}
         </StyledText>
       </div>
