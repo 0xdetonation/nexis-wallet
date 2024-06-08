@@ -222,7 +222,7 @@ function _TokenBalances({
         id: item.token.address,
         address: item.token.address,
         displayAmount: (item.value / Math.pow(10, item.token.decimals)).toString(),
-        token: item.token.name + "( "+item.token.symbol +" )",
+        token: item.token.name,
         marketData: {
           id: item.token.address,
           percentChange: 0,

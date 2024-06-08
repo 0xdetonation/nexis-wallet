@@ -1,4 +1,4 @@
-import { type ReactNode, Suspense, useCallback, useMemo } from "react";
+import { type ReactNode, Suspense, useCallback, useMemo, useEffect, useState } from "react";
 import { SectionList, type SectionListRenderItem } from "react-native";
 import { useSuspenseQuery } from "@apollo/client";
 import {
@@ -110,33 +110,154 @@ export function BalanceDetails({
   emptyTransactionsComponent,
   loaderComponent,
   token: tokenMint,
+  symbol,
+  amount,
   widgets,
 }: BalanceDetailsProps) {
   const activeWallet = useActiveWallet();
-  const { data } = useSuspenseQuery(GET_TRANSACTIONS_FOR_TOKEN, {
-    fetchPolicy: "cache-and-network",
-    errorPolicy: "all",
-    variables: {
-      address: activeWallet.publicKey,
-      transactionFilters: {
-        token: tokenMint,
-      },
-      providerId: activeWallet.blockchain.toUpperCase() as ProviderId,
-    },
+  const [data,setData] = useState();
+  // const { data } = useSuspenseQuery(GET_TRANSACTIONS_FOR_TOKEN, {
+  //   fetchPolicy: "cache-and-network",
+  //   errorPolicy: "all",
+  //   variables: {
+  //     address: activeWallet.publicKey,
+  //     transactionFilters: {
+  //       token: tokenMint,
+  //     },
+  //     providerId: activeWallet.blockchain.toUpperCase() as ProviderId,
+  //   },
+  // });
+
+  const ZERO_ADDRESS="0x0000000000000000000000000000000000000000";
+  const [datax,setDatax] = useState([]);
+  const [nztBal,setNztBal] = useState({
+    id: ZERO_ADDRESS,
+        address: ZERO_ADDRESS,
+        displayAmount: (0 / Math.pow(10, 18)).toString(),
+        token: "Nexis",
+        marketData: {
+          id: "",
+          percentChange: 0,
+          value: 1,
+          valueChange: 0,
+        },
+        tokenListEntry:{
+          id: ZERO_ADDRESS,
+          address: ZERO_ADDRESS,
+          logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/Mask%20group%20(1).png",
+          name: "Nexis",
+          symbol: "NZT",
+        }
   });
 
-  const token: _ResponseToken | undefined = useMemo(
-    () =>
-      data?.wallet?.balances?.tokens?.edges.find(
-        (e) => e.node.token === tokenMint
-      )?.node,
-    [data?.wallet, tokenMint]
-  );
+  useEffect(()=>{
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-balances`;
 
-  const transactions: _ResponseTokenTransaction[] = useMemo(
-    () => data?.wallet?.transactions?.edges.map((e) => e.node) ?? [],
-    [data?.wallet]
-  );
+    const fetchBalances = async()=>{
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        let data = await response.json();
+
+        setDatax(data);
+      } catch (error) {
+        console.error('Error fetching token balances:', error);
+      }
+    }
+    fetchBalances();
+  },[])
+
+  useEffect(()=>{
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5`;
+
+    const fetchNZTBalance = async()=>{
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        let data = await response.json();
+
+        setNztBal({
+          id: ZERO_ADDRESS,
+              address: ZERO_ADDRESS,
+              displayAmount: (data.coin_balance / Math.pow(10, 18)).toString(),
+              token: "Nexis",
+              marketData: {
+                id: ZERO_ADDRESS,
+                percentChange: 0,
+                value: 1,
+                valueChange: 0,
+              },tokenListEntry:{
+                id: ZERO_ADDRESS,
+                address: ZERO_ADDRESS,
+                logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/Mask%20group%20(1).png",
+                name: "Nexis",
+                symbol: "NZT",
+              }
+        })
+      } catch (error) {
+        console.error('Error fetching token balances:', error);
+      }
+    }
+    fetchNZTBalance();
+  },[])
+
+  useEffect(()=>{
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-transfers?type=ERC-20&filter=to%20%7C%20from&token=0x8F1C77D54f58456f34E04Ddc8F7981539c277A5b`
+
+    const fetchTokenData = async()=>{
+      try {
+        const response = await fetch(url);
+        const _data = await response.json()
+        setData(_data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchTokenData()
+  },[])
+
+  let balances = datax
+      .filter((item: any) => item.token.type === "ERC-20")
+      .map((item:any) => ({
+        id: item.token.address,
+        address: item.token.address,
+        displayAmount: (item.value / Math.pow(10, item.token.decimals)).toString(),
+        token: item.token.name,
+        marketData: {
+          id: item.token.address,
+          percentChange: 0,
+          value: 0,
+          valueChange: 0,
+        },
+        tokenListEntry:{
+          id: item.token.address,
+          address: item.token.address,
+          logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/NZT%20token%20logo%20light.png",
+          name: item.token.name,
+          symbol: item.token.symbol,
+        }
+      }));
+
+  balances.push(nztBal);
+
+  // const token: _ResponseToken | undefined = useMemo(
+  //   () =>
+  //     data?.wallet?.balances?.tokens?.edges.find(
+  //       (e) => e.node.token === tokenMint
+  //     )?.node,
+  //   [data?.wallet, tokenMint]
+  // );
+
+  const token : _ResponseToken | undefined = balances.find((val)=>val.tokenListEntry.name==tokenMint && val.tokenListEntry.symbol==symbol && amount == val.displayAmount)
+
+  // const transactions: _ResponseTokenTransaction[] = useMemo(
+  //   () => data?.wallet?.transactions?.edges.map((e) => e.node) ?? [],
+  //   [data?.wallet]
+  // );
 
   if (!token) {
     return (
@@ -168,11 +289,11 @@ export function BalanceDetails({
       />
       {widgets}
       <Suspense fallback={loaderComponent}>
-        <TokenTransactionList
+        {/* <TokenTransactionList
           emptyStateComponent={emptyTransactionsComponent}
           transactions={transactions}
           providerId={data?.wallet?.provider.providerId ?? ProviderId.Solana}
-        />
+        /> */}
       </Suspense>
     </YStack>
   );
