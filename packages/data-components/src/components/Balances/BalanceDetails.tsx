@@ -115,7 +115,7 @@ export function BalanceDetails({
   widgets,
 }: BalanceDetailsProps) {
   const activeWallet = useActiveWallet();
-  const [data,setData] = useState();
+  const [data,setData] = useState(undefined);
   // const { data } = useSuspenseQuery(GET_TRANSACTIONS_FOR_TOKEN, {
   //   fetchPolicy: "cache-and-network",
   //   errorPolicy: "all",
@@ -151,7 +151,7 @@ export function BalanceDetails({
   });
 
   useEffect(()=>{
-    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-balances`;
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${activeWallet.publicKey}/token-balances`;
 
     const fetchBalances = async()=>{
       try {
@@ -167,10 +167,10 @@ export function BalanceDetails({
       }
     }
     fetchBalances();
-  },[])
+  },[activeWallet.publicKey])
 
   useEffect(()=>{
-    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5`;
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${activeWallet.publicKey}`;
 
     const fetchNZTBalance = async()=>{
       try {
@@ -203,22 +203,7 @@ export function BalanceDetails({
       }
     }
     fetchNZTBalance();
-  },[])
-
-  useEffect(()=>{
-    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-transfers?type=ERC-20&filter=to%20%7C%20from&token=0x8F1C77D54f58456f34E04Ddc8F7981539c277A5b`
-
-    const fetchTokenData = async()=>{
-      try {
-        const response = await fetch(url);
-        const _data = await response.json()
-        setData(_data);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    fetchTokenData()
-  },[])
+  },[activeWallet.publicKey])
 
   let balances = datax
       .filter((item: any) => item.token.type === "ERC-20")
@@ -254,10 +239,45 @@ export function BalanceDetails({
 
   const token : _ResponseToken | undefined = balances.find((val)=>val.tokenListEntry.name==tokenMint && val.tokenListEntry.symbol==symbol && amount == val.displayAmount)
 
+  useEffect(()=>{
+      const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${activeWallet.publicKey}/token-transfers?type=ERC-20&filter=to%20%7C%20from&token=${token?.address}`;
+  
+      const fetchTokenData = async()=>{
+        try {
+          const response = await fetch(url);
+          const _data = await response.json()
+          setData(_data);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    
+      if(token){
+    fetchTokenData()
+      }
+  },[token,activeWallet.publicKey])
+
+
   // const transactions: _ResponseTokenTransaction[] = useMemo(
   //   () => data?.wallet?.transactions?.edges.map((e) => e.node) ?? [],
   //   [data?.wallet]
   // );
+
+  const transactions : _ResponseTokenTransaction[] = (data as any)?.items.map((val=>({
+    id:val.tx_hash,
+    hash:val.tx_hash, 
+    timestamp:val.timestamp,
+    provider:{
+      id: 'ethereum',
+      providerId:'ethereum'
+    }
+  })))
+  // timestamp: string;
+  // provider: {
+  //     __typename?: "Provider" | undefined;
+  //     id: string;
+  //     providerId: ProviderId;
+  // };
 
   if (!token) {
     return (
@@ -292,7 +312,7 @@ export function BalanceDetails({
         {/* <TokenTransactionList
           emptyStateComponent={emptyTransactionsComponent}
           transactions={transactions}
-          providerId={data?.wallet?.provider.providerId ?? ProviderId.Solana}
+          providerId={ProviderId.Ethereum}
         /> */}
       </Suspense>
     </YStack>

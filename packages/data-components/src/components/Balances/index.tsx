@@ -139,7 +139,7 @@ function _TokenBalances({
   });
 
   useEffect(()=>{
-    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5/token-balances`;
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${address}/token-balances`;
 
     const fetchBalances = async()=>{
       try {
@@ -155,10 +155,10 @@ function _TokenBalances({
       }
     }
     fetchBalances();
-  },[])
+  },[address])
 
   useEffect(()=>{
-    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/0x77542Fe67d92eD60F94e2396A7A077D0461a7Dd5`;
+    const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${address}`;
 
     const fetchNZTBalance = async()=>{
       try {
@@ -191,7 +191,7 @@ function _TokenBalances({
       }
     }
     fetchNZTBalance();
-  },[])
+  },[address])
   
   // const { data } = usePolledSuspenseQuery(
   //   pollingIntervalSeconds ?? DEFAULT_POLLING_INTERVAL_SECONDS,
