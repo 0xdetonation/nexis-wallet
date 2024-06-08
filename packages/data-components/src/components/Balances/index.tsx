@@ -257,24 +257,17 @@ function _TokenBalances({
    * Memoized value of the inner balance summary aggregate
    * returned from the GraphQL query for the page.
    */
-  const aggregate = useMemo(() => {
-    const aggregate = {
-      id: "",
-      percentChange: 0,
-      value: 0,
-      valueChange: 0,
-    };
+  let aggregate = {
+    id: "",
+    percentChange: 0,
+    value: 0,
+    valueChange: 0,
+  };
 
-    balances.forEach((balance:any) => {
-      aggregate.value += balance.marketData.value;
-      aggregate.valueChange += balance.marketData.valueChange;
-    });
-
-    aggregate.value -= omissions.value;
-    aggregate.valueChange -= omissions.valueChange;
-
-    return aggregate;
-  }, [data, omissions]);
+  balances.forEach((balance:any)=>{
+    aggregate.value +=balance.displayAmount*balance.marketData.value
+  })
+  aggregate.value+=parseFloat(nztBal.displayAmount)*nztBal.marketData.value;
 
   return (
     <YStack alignItems="center" gap={20} marginVertical={16}>
