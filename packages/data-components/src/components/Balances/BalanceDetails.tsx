@@ -130,7 +130,7 @@ export function BalanceDetails({
 
   const ZERO_ADDRESS="0x0000000000000000000000000000000000000000";
   const [datax,setDatax] = useState([]);
-  const [nztBal,setNztBal] = useState({
+  const initialNztBalance = {
     id: ZERO_ADDRESS,
         address: ZERO_ADDRESS,
         displayAmount: (0 / Math.pow(10, 18)).toString(),
@@ -148,7 +148,8 @@ export function BalanceDetails({
           name: "Nexis",
           symbol: "NZT",
         }
-  });
+  }
+  const [nztBal,setNztBal] = useState(initialNztBalance);
 
   useEffect(()=>{
     const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${activeWallet.publicKey}/token-balances`;
@@ -164,6 +165,7 @@ export function BalanceDetails({
         setDatax(data);
       } catch (error) {
         console.error('Error fetching token balances:', error);
+        setDatax([])
       }
     }
     fetchBalances();
@@ -200,6 +202,7 @@ export function BalanceDetails({
         })
       } catch (error) {
         console.error('Error fetching token balances:', error);
+        setNztBal(initialNztBalance)
       }
     }
     fetchNZTBalance();
@@ -249,6 +252,7 @@ export function BalanceDetails({
           setData(_data);
         } catch (error) {
           console.log(error);
+          setData(undefined);
         }
       }
     
@@ -263,15 +267,6 @@ export function BalanceDetails({
   //   [data?.wallet]
   // );
 
-  const transactions : _ResponseTokenTransaction[] = (data as any)?.items.map((val=>({
-    id:val.tx_hash,
-    hash:val.tx_hash, 
-    timestamp:val.timestamp,
-    provider:{
-      id: 'ethereum',
-      providerId:'ethereum'
-    }
-  })))
   // timestamp: string;
   // provider: {
   //     __typename?: "Provider" | undefined;

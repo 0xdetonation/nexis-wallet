@@ -118,7 +118,7 @@ function _TokenBalances({
 
   const ZERO_ADDRESS="0x0000000000000000000000000000000000000000";
   const [data,setData] = useState([]);
-  const [nztBal,setNztBal] = useState({
+  const initialNztBal = {
     id: ZERO_ADDRESS,
         address: ZERO_ADDRESS,
         displayAmount: (0 / Math.pow(10, 18)).toString(),
@@ -136,7 +136,8 @@ function _TokenBalances({
           name: "Nexis",
           symbol: "NZT",
         }
-  });
+  }
+  const [nztBal,setNztBal] = useState(initialNztBal);
 
   useEffect(()=>{
     const url = `https://evm-testnet.nexscan.io/api/v2/addresses/${address}/token-balances`;
@@ -152,6 +153,7 @@ function _TokenBalances({
         setData(data);
       } catch (error) {
         console.error('Error fetching token balances:', error);
+        setData([])
       }
     }
     fetchBalances();
@@ -188,6 +190,7 @@ function _TokenBalances({
         })
       } catch (error) {
         console.error('Error fetching token balances:', error);
+        setNztBal(initialNztBal)
       }
     }
     fetchNZTBalance();
