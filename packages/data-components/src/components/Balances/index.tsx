@@ -128,6 +128,13 @@ function _TokenBalances({
           percentChange: 0,
           value: 1,
           valueChange: 0,
+        },
+        tokenListEntry:{
+          id: ZERO_ADDRESS,
+          address: ZERO_ADDRESS,
+          logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/Mask%20group%20(1).png",
+          name: "Nexis",
+          symbol: "NZT",
         }
   });
 
@@ -171,6 +178,12 @@ function _TokenBalances({
                 percentChange: 0,
                 value: 1,
                 valueChange: 0,
+              },tokenListEntry:{
+                id: ZERO_ADDRESS,
+                address: ZERO_ADDRESS,
+                logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/Mask%20group%20(1).png",
+                name: "Nexis",
+                symbol: "NZT",
               }
         })
       } catch (error) {
@@ -211,10 +224,17 @@ function _TokenBalances({
         displayAmount: (item.value / Math.pow(10, item.token.decimals)).toString(),
         token: item.token.name + "( "+item.token.symbol +" )",
         marketData: {
-          id: "",
+          id: item.token.address,
           percentChange: 0,
           value: 0,
           valueChange: 0,
+        },
+        tokenListEntry:{
+          id: item.token.address,
+          address: item.token.address,
+          logo: "https://raw.githubusercontent.com/Nexis-Network/Nexis-Brand-Kit/main/NZT%20token%20logo%20light.png",
+          name: item.token.name,
+          symbol: item.token.symbol,
         }
       }));
 
